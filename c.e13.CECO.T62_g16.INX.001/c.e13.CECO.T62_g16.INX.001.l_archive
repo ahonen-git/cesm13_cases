@@ -1,0 +1,52 @@
+#! /bin/csh -f
+#PBS -N c.e13.CECO.T_la
+#PBS -P 151018
+#PBS -l walltime=2:00:00
+#PBS -l select=1:ncous=1:mem=1gb
+#PBS -q xa
+#PBS -o /home/misumi/cesm13_cases/c.e13.CECO.T62_g16.INX.001/logs/
+#PBS -e /home/misumi/cesm13_cases/c.e13.CECO.T62_g16.INX.001/logs/
+
+#-----------------------------------------------------------------------
+# Determine necessary environment variables
+#-----------------------------------------------------------------------
+
+cd /home/misumi/cesm13_cases/c.e13.CECO.T62_g16.INX.001 
+source /etc/profile.d/modules.csh
+module load mss
+
+source ./Tools/ccsm_getenv || exit -1
+
+#----------------------------------------------
+# Compress selected history files
+#   1. Uncomment the following block of code
+#   2. Set complist to desired components
+#----------------------------------------------
+# set complist="atm cpl ice lnd rof ocn"
+# date
+# echo ""
+# echo "Compression Timing" 
+# echo "------------------"
+# if (-e /glade/apps/opt/bin/pigz) then
+#    set cmd = /glade/apps/opt/bin/pigz
+# else
+#    set cmd = gzip
+# endif
+# set time=(3600 "%E %P %Uu %Ss")
+# foreach comp ( $complist )
+#    cd $DOUT_S_ROOT/$comp/hist
+#    echo -n " ${comp}: "
+#    time $cmd *
+# end
+# unset time
+# echo ""
+
+
+#----------------------------------------------
+# run the long term archiver
+#----------------------------------------------
+
+cd $DOUT_S_ROOT
+$CASEROOT/Tools/lt_archive.sh -m copy_dirs_hsi
+exit 0
+

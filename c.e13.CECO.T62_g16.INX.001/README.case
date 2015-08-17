@@ -1,0 +1,47 @@
+create_newcase -compset CECO -res T62_g16 -mach inx -compiler intel -pes_file /home/gtmitsuo/cesm/cesm12_cases/CECO/CECO_yellowstone_pes.xml -case /home/misumi/cesm13_cases/c.e13.CECO.T62_g16.INX.001
+
+
+Component set: longname (shortname) (alias) 
+  1850_DATM%NYF_SLND_DICE%SSMI_POP2%ECO_DROF%NYF_SGLC_SWAV (C_NORMAL_YEAR_ECOSYS) (CECO) 
+Component set Description: 
+  DATM: SLND: DROF: DICE: POP2: SGLC: SWAV: pre-industrial: POP2 default: POP2/Ecosystem: COREv2 datm normal year forcing: (requires additional user-supplied data) COREv2 drof normal year forcing: dice mode is ssmi: ECO in POP: 
+Grid: 
+  a%T62_l%T62_oi%gx1v6_r%rx1_m%gx1v6_g%null_w%null (T62_gx1v6) 
+  ATM_GRID = T62  NX_ATM=192 NY_ATM=96 
+  LND_GRID = T62  NX_LND=192 NX_LND=96 
+  ICE_GRID = gx1v6  NX_ICE=320 NX_ICE=384 
+  OCN_GRID = gx1v6  NX_OCN=320 NX_OCN=384 
+  ROF_GRID = rx1  NX_ROF=360 NX_ROF=180 
+  GLC_GRID = T62  NX_GLC=192 NX_GLC=96 
+  WAV_GRID = null  NX_WAV=0 NX_WAV=0 
+Grid Description: 
+  null is no grid: T62 is Gaussian grid: gx1v6 is Greenland pole v6 1-deg grid: rx1 is 1 degree river routing grid (only valid for DROF): 
+Non-Default Options: 
+  ATM_NCPL: 4 
+  BUDGETS: TRUE 
+  CCSM_BGC: none 
+  CCSM_CCOST: 1 
+  CCSM_CO2_PPMV: 284.7 
+  COMP_ATM: datm 
+  COMP_GLC: sglc 
+  COMP_ICE: dice 
+  COMP_LND: slnd 
+  COMP_OCN: pop2 
+  COMP_ROF: drof 
+  COMP_WAV: swav 
+  CPL_ALBAV: true 
+  CPL_EPBAL: ocn 
+  CPL_SEQ_OPTION: CESM1_MOD 
+  DATM_MODE: CORE2_NYF 
+  DATM_PRESAERO: none 
+  DICE_MODE: ssmi 
+  DROF_MODE: DIATREN_ANN_RX1 
+  OCN_CHL_TYPE: prognostic 
+  OCN_CO2_TYPE: constant 
+  OCN_COUPLING: partial 
+  OCN_ICE_FORCING: inactive 
+  OCN_NCPL: 1 
+  OCN_TRACER_MODULES:  iage ecosys 
+  ROF_NCPL: $ATM_NCPL 
+  RTM_MODE: NULL 
+  SCIENCE_SUPPORT: NO 

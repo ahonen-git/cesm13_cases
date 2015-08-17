@@ -1,0 +1,209 @@
+#! /bin/tcsh -f
+
+#################################################################################
+if ($PHASE == set_batch) then
+#################################################################################
+
+source ./Tools/ccsm_getenv || exit -1
+
+./xmlchange -file env_mach_pes.xml -id COST_PES -val 0
+
+set ntasks_tot = `${CASEROOT}/Tools/taskmaker.pl -sumtasks`
+set ntasks_nod = ${MAX_TASKS_PER_NODE}
+
+@ nodes = ${ntasks_tot} / ${ntasks_nod}
+if ( ${ntasks_tot} % ${ntasks_nod} > 0) then
+  @ nodes = $nodes + 1
+endif
+
+#./xmlchange -file env_mach_pes.xml -id COST_PES -val ${costpes}
+
+#--- Job name is first fifteen characters of case name ---
+set job_name = `echo ${CASE} | cut -c1-15`
+
+if ($?ACCOUNT) then
+  set account_name = $ACCOUNT
+else
+  if (-e ~/.cesm_proj) then
+     set account_name = `head -1 ~/.cesm_proj`
+  else
+     set account_name = 151018
+  endif
+endif
+
+if ($?QUEUE) then
+  set queue_name = $QUEUE
+else
+  if (${ntasks_tot} <= 16) then
+    set queue_name = "xs"
+  else if (${ntasks_tot} <= 512) then
+    set queue_name = "xv"
+  else # 512 ~
+    set queue_name = "xf"
+  endif
+endif
+
+if ($?ELAPSE) then
+  set time_limit = $ELAPSE
+else
+  set time_limit = "12:00:00"
+endif
+
+if ($?TESTMODE) then
+ set file = $CASEROOT/${CASE}.test 
+else
+ set file = $CASEROOT/${CASE}.run 
+endif
+
+cat >! $file << EOF1
+#! /bin/tcsh -f
+#PBS -N ${job_name}
+#PBS -P ${account_name}
+#PBS -q ${queue_name}
+#PBS -l walltime=${time_limit}
+#PBS -l select=${ntasks_tot}:ncpus=1:mem=1gb:mpiprocs=1
+#PBS -o ${CASEROOT}/logs/
+#PBS -e ${CASEROOT}/logs/
+#PBS -V
+
+source /etc/profile.d/modules.csh
+
+EOF1
+###if ($?task_geo) then
+###cat >> $file << EOF2
+###setenv LSB_PJL_TASK_GEOMETRY "{$task_geo}"
+###EOF2
+###endif
+
+#################################################################################
+else if ($PHASE == set_exe) then
+#################################################################################
+
+
+cat >> ${CASEROOT}/${CASE}.run << EOF1
+# -------------------------------------------------------------------------
+# Run the model
+# -------------------------------------------------------------------------
+
+cd \$RUNDIR
+sleep 10
+echo "\`date\` -- CSM EXECUTION BEGINS HERE" 
+
+if ( "\$MPILIB" == "impi" ) then
+  module load intelmpi/4.0.3.008
+  impijob \$EXEROOT/cesm.exe >&! cesm.log.\$LID
+else if ( "\$MPILIB" == "mpt" ) then
+  module load mpt/2.05
+  mpijob \$EXEROOT/cesm.exe >&! cesm.log.\$LID
+else
+  echo "Error:invalid MPILIB:\$MPILIB"
+  exit -1
+endif
+
+wait
+echo "\`date\` -- CSM EXECUTION HAS FINISHED" 
+
+# -------------------------------------------------------------------------
+# For Postprocessing
+# -------------------------------------------------------------------------
+EOF1
+
+
+#################################################################################
+else if ($PHASE == set_larch) then
+#################################################################################
+
+if (-e ${CASEROOT}/${CASE}.l_archive) then
+   echo ERROR: generate_batch.csh file ${CASE}.l_archive already exists in ${CASEROOT}
+   exit -1
+endif
+
+# Create the archive script
+touch ${CASEROOT}/${CASE}.l_archive
+chmod 775 ${CASEROOT}/${CASE}.l_archive
+
+#--- Job name is first fifteen characters of case name ---
+set job_name = `echo ${CASE} | cut -c1-12`
+set job_name = ${job_name}_la
+
+if ($?ACCOUNT) then
+  set account_name = $ACCOUNT
+else
+  if (-e ~/.cesm_proj) then
+     set account_name = `head -1 ~/.cesm_proj`
+  else
+     set account_name = 151018
+  endif
+endif
+
+set time_limit = "2:00:00"
+set queue_name = "xa"
+
+cat >! $CASEROOT/${CASE}.l_archive << EOF1
+#! /bin/csh -f
+#PBS -N ${job_name}
+#PBS -P ${account_name}
+#PBS -l walltime=${time_limit}
+#PBS -l select=1:ncous=1:mem=1gb
+#PBS -q ${queue_name}
+#PBS -o ${CASEROOT}/logs/
+#PBS -e ${CASEROOT}/logs/
+
+#-----------------------------------------------------------------------
+# Determine necessary environment variables
+#-----------------------------------------------------------------------
+
+cd $CASEROOT 
+source /etc/profile.d/modules.csh
+module load mss
+
+source ./Tools/ccsm_getenv || exit -1
+
+#----------------------------------------------
+# Compress selected history files
+#   1. Uncomment the following block of code
+#   2. Set complist to desired components
+#----------------------------------------------
+# set complist="atm cpl ice lnd rof ocn"
+# date
+# echo ""
+# echo "Compression Timing" 
+# echo "------------------"
+# if (-e /glade/apps/opt/bin/pigz) then
+#    set cmd = /glade/apps/opt/bin/pigz
+# else
+#    set cmd = gzip
+# endif
+# set time=(3600 "%E %P %Uu %Ss")
+# foreach comp ( \$complist )
+#    cd \$DOUT_S_ROOT/\$comp/hist
+#    echo -n " \${comp}: "
+#    time \$cmd *
+# end
+# unset time
+# echo ""
+
+
+#----------------------------------------------
+# run the long term archiver
+#----------------------------------------------
+
+cd \$DOUT_S_ROOT
+\$CASEROOT/Tools/lt_archive.sh -m copy_dirs_hsi
+exit 0
+
+EOF1
+
+#################################################################################
+else
+#################################################################################
+
+    echo "  PHASE setting of $PHASE is not an accepted value"
+    echo "  accepted values are set_batch, set_exe and set_larch"
+    exit 1
+
+#################################################################################
+endif
+#################################################################################
+ 
+
